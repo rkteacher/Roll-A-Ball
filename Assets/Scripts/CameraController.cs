@@ -4,18 +4,15 @@ using UnityEngine;
 
 public class CameraController : MonoBehaviour
 {
+    [SerializeField] private float offsetX;
+    [SerializeField] private float offsetY;
+    [SerializeField] private float offsetZ;
 
-    public float rotationSpeed = 5f;
-    
+    [SerializeField] private Transform player;
 
-    void Update()
+    private void Update()
     {
-        // this is the left and right arrow keys
-        float horizontalInput = Input.GetAxis("Horizontal");
-
-        //                                                            V variable   V Time.deltaTime
-        // wrong way:  transform.Rotate(Vector3.up, horizontalInput * 33 * Time.time);
-
-        transform.Rotate(Vector3.up, horizontalInput * rotationSpeed * Time.deltaTime);
+        transform.position = player.transform.position + new Vector3(offsetX, offsetY, -offsetZ);
     }
+
 }
