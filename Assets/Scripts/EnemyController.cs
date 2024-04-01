@@ -8,6 +8,9 @@ public class EnemyController : MonoBehaviour
     private Rigidbody enemyRb;
     private GameObject player;
 
+    public bool enemyAggro = false;
+    [SerializeField] SphereCollider aggroZone;
+
     private void Awake()
     {
         enemyRb = GetComponent<Rigidbody>();
@@ -21,6 +24,17 @@ public class EnemyController : MonoBehaviour
 
      void FixedUpdate()
     {
-        enemyRb.AddForce((player.transform.position - transform.position).normalized * speed);
+        if(enemyAggro == true)
+        {
+            enemyRb.AddForce((player.transform.position - transform.position).normalized * speed);
+        }
+    }
+
+    private void OnTriggerEnter(Collider other)
+    {
+        if(other.CompareTag("PlayerAggro"))
+        {
+            enemyAggro = true;
+        }
     }
 }
