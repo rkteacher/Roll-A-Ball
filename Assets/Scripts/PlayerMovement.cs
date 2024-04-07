@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 public class PlayerMovement : MonoBehaviour
 {
@@ -20,33 +21,84 @@ public class PlayerMovement : MonoBehaviour
     [SerializeField] private LayerMask ground;
 
     private Rigidbody playerRB;
+    PlayerInputActions playerInputActions;
+
+    PlayerInput playerInput;
+    InputAction moveAction;
+    InputAction jumpAction;
+
+    public float sizeInterval;
+    public float minSize = 1f;
+    public float maxSize = 10f;
+    public float currentSize;
+
+    private float raycastLength = 0.6f;
 
     bool isGrounded()
     {
-        return Physics.Raycast(transform.position, -Vector3.up, 0.6f);
+        return Physics.Raycast(transform.position, -Vector3.up, raycastLength);
+    }
+
+    private void Awake()
+    {
+        playerRB = GetComponent<Rigidbody>();
+        playerInput = GetComponent<PlayerInput>();
+
+        playerInputActions = new PlayerInputActions();
+        playerInputActions.Movement.Enable();
+        playerInputActions.Movement.Jump.performed += Jump;
+        //playerInputActions.Movement.Move.performed += Movement_performed;
+
+       
     }
 
     private void Start()
     {
-        playerRB = GetComponent<Rigidbody>();
+        currentSize = 1f;
+        transform.localScale = new Vector3(minSize, minSize, minSize);
     }
 
     private void Update()
     {
 
         Debug.DrawRay(transform.position, -Vector3.up, Color.red);
+
+       
+
         // float forwardInput = Input.GetAxis("Vertical");
 
         //   playerRB.AddForce(Vector3.forward  * speed * forwardInput * Time.deltaTime);
 
-        if(Input.GetButtonDown("Jump"))
+        /*if(Input.GetButtonDown("Jump"))
         {
             Jump();
-        }
+        }*/
 
         if (Input.GetButtonDown("Fire1"))
         {
             Debug.Log(isGrounded());
+        }
+    }
+
+    public void Grow()
+    {
+        
+        if(currentSize < maxSize)
+        {
+            currentSize++;
+            raycastLength = raycastLength + 0.6f;
+            transform.localScale = new Vector3(currentSize, currentSize, currentSize);
+        }
+    }
+
+    public void Shrink()
+    {
+        
+        if (currentSize > minSize)
+        {
+            currentSize--;
+            raycastLength = raycastLength - 0.6f;
+            transform.localScale = new Vector3(currentSize, currentSize, currentSize);
         }
     }
 
@@ -58,6 +110,15 @@ public class PlayerMovement : MonoBehaviour
             Destroy(other.gameObject);
             StartCoroutine(PowerupCountdownRoutine());
         }
+
+        if (other.CompareTag("Orb"))
+        {
+            Destroy(other.gameObject);
+            Grow();
+        }
+
+        
+
     }
 
     IEnumerator PowerupCountdownRoutine()
@@ -67,29 +128,30 @@ public class PlayerMovement : MonoBehaviour
     }
 
     private void FixedUpdate()
-    {
-        float moveHorizontal = Input.GetAxis("Horizontal") * Time.deltaTime * speed;
-        float moveVertical = Input.GetAxis("Vertical") * Time.deltaTime * speed;
-        Vector3 movement = new Vector3(moveHorizontal, 0.0f, moveVertical);
-
-        if( movement.magnitude > 0.1f)
-        {
-            float targetAngle = Mathf.Atan2(movement.x, movement.z) * Mathf.Rad2Deg + cam.eulerAngles.y;
-            //transform.rotation = Quaternion.Euler(0f, targetAngle, 0f);
-
-            //float moveHorizontal = Input.GetAxis("Horizontal") * Time.deltaTime * speed;
-            //float moveVertical = Input.GetAxis("Vertical") * Time.deltaTime * speed;
-            //transform.Translate(moveHorizontal, 0, moveVertical);
-
-            Vector3 moveDir = Quaternion.Euler(0f, targetAngle, 0f) * Vector3.forward;
-            playerRB.AddForce(moveDir * speed * Time.deltaTime);
-        }
-       
+    {  
+        Move();
+     
     }
 
-    private void Jump()
+    private void Move()
     {
-        if (isGrounded() == true)
+        Vector2 inputVector = playerInputActions.Movement.Move.ReadValue<Vector2>();
+        float targetAngle = Mathf.Atan2(inputVector.x, inputVector.y) * Mathf.Rad2Deg + cam.eulerAngles.y;
+        Vector3 moveDir = Quaternion.Euler(0f, targetAngle, 0f) * Vector3.forward;
+
+        //checks if any value in input is greater than 0. This will only happen if an input is being pressed. 
+        //Without this the player will always move.
+        if (inputVector.magnitude > 0.1)
+        {
+            playerRB.AddForce(moveDir * speed * Time.deltaTime);
+        }
+    }
+
+
+
+    public void Jump(InputAction.CallbackContext context)
+    {
+        if (isGrounded() == true && context.performed)
         {
             playerRB.AddForce(Vector3.up * jumpForce, ForceMode.Impulse);
         }
@@ -106,6 +168,11 @@ public class PlayerMovement : MonoBehaviour
             Vector3 bounceDir = (collision.gameObject.transform.position - transform.position);
 
             enemyRb.AddForce(bounceDir * powerBounceStrength, ForceMode.Impulse);
+        }
+
+        if (collision.gameObject.CompareTag("Spike"))
+        {
+            Shrink();
         }
     }
 

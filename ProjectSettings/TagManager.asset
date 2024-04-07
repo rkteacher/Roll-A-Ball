@@ -3,7 +3,12 @@
 --- !u!78 &1
 TagManager:
   serializedVersion: 2
-  tags: []
+  tags:
+  - Enemy
+  - Powerup
+  - PlayerAggro
+  - Orb
+  - Spike
   layers:
   - Default
   - TransparentFX
@@ -11,8 +16,8 @@ TagManager:
   - Ground
   - Water
   - UI
-  - 
-  - 
+  - Camera_1
+  - Camera_2
   - 
   - 
   - 
